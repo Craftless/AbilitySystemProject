@@ -1,0 +1,28 @@
+{
+	"folders": [
+		{
+			"name": "AbilitySystemProject",
+			"path": "."
+		},
+		{
+			"name": "UE4",
+			"path": "/Users/javiertan/UnrealEngine/UE_4.27"
+		}
+	],
+	"settings": {
+		"typescript.tsc.autoDetect": "off",
+		"C_Cpp.default.forcedInclude": [
+			"${default}",
+			"/Users/javiertan/UnrealEngine/UnrealProjects/AbilitySystemProject/Intermediate/Build/Mac/x86_64/UE4Editor/Development/AbilitySystemProject/Definitions.AbilitySystemProject.h",
+			"/Users/javiertan/UnrealEngine/UnrealProjects/AbilitySystemProject/Intermediate/Build/Mac/x86_64/AbilitySystemProjectEditor/Development/Engine/SharedPCH.Engine.ShadowErrors.h"
+		]
+	},
+	"extensions": {
+		"recommendations": [
+			"ms-vscode.cpptools",
+			"ms-dotnettools.csharp",
+			"vadimcn.vscode-lldb",
+			"ms-vscode.mono-debug"
+		]
+	}
+}
