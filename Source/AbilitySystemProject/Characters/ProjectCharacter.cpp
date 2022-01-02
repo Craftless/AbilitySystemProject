@@ -4,6 +4,11 @@
 #include "ProjectCharacter.h"
 #include "AbilitySystemComponent.h"
 #include "../AttributeSetBase.h"
+#include "AIController.h"
+#include "BrainComponent.h"
+#include "Abilities/GameplayAbility.h"
+#include "../GameplayAbilityBase.h"
+#include "../PlayerControllerBase.h"
 
 
 // Sets default values
@@ -27,6 +32,7 @@ void AProjectCharacter::BeginPlay()
 		AttributeSetBase -> OnStaminaChanged.AddDynamic(this, &AProjectCharacter::OnStaminaChanged);
 	}
 	bIsDead = false;
+	MeleeComboCount = 1;
 }
 
 
@@ -53,7 +59,7 @@ void AProjectCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	
 }
 
-void AProjectCharacter::AcquireAbility(TSubclassOf<class UGameplayAbility> AbilityToAcquire) 
+void AProjectCharacter::AcquireAbility(TSubclassOf<UGameplayAbility> AbilityToAcquire) 
 {
 	if (!ensure(SystemComp)) return;
 	if (!HasAuthority()) return;
@@ -66,9 +72,32 @@ void AProjectCharacter::AcquireAbility(TSubclassOf<class UGameplayAbility> Abili
 	SystemComp -> InitAbilityActorInfo(this, this);
 }
 
+void AProjectCharacter::AcquireAbilities(TArray<TSubclassOf<UGameplayAbility>> AbilitiesToAcquire) 
+{
+	if (HasAuthority()) {
+		for (TSubclassOf<UGameplayAbility> AbilityClass : AbilitiesToAcquire) {
+			AcquireAbility(AbilityClass);
+			if (AbilityClass -> IsChildOf(UGameplayAbilityBase::StaticClass())) {
+
+				TSubclassOf<UGameplayAbilityBase> AbilityBaseClass = *AbilityClass;
+				if (AbilityBaseClass) {
+					AddAbilityToUI(AbilityBaseClass);
+				}
+			}
+		}
+	}
+}
+
 bool AProjectCharacter::IsOtherActorHostile(AActor* ActorToCheck) 
 {
 	return IsOtherHostile(ActorToCheck);
+}
+
+void AProjectCharacter::ApplyGameplayEffectToTargetByTargetData(const FGameplayEffectSpecHandle& GESpecHandle, const FGameplayAbilityTargetDataHandle& TargetDataHandle) 
+{
+	for (TSharedPtr<FGameplayAbilityTargetData> Data : TargetDataHandle.Data) {
+		Data -> ApplyGameplayEffectSpec(*GESpecHandle.Data.Get());
+	}
 }
 
 
@@ -139,5 +168,57 @@ void AProjectCharacter::AddGameplayTag(const FGameplayTag& Tag)
 void AProjectCharacter::RemoveGameplayTag(const FGameplayTag& Tag) 
 {
 	GetAbilitySystemComponent() -> RemoveLooseGameplayTag(Tag);
+}
+
+void AProjectCharacter::EnableInputControl() 
+{
+	if (IsPlayerControlled()) {
+		APlayerController* PlayerController = Cast<APlayerController>(GetController());
+		EnableInput(PlayerController);
+	}
+	else {
+		AAIController* AIController = Cast<AAIController>(GetController());
+		if (AIController) AIController -> GetBrainComponent() -> RestartLogic();
+	}
+}
+
+void AProjectCharacter::DisableInputControl() 
+{
+	if (IsPlayerControlled()) {
+			APlayerController* PlayerController = Cast<APlayerController>(GetController());
+			DisableInput(PlayerController);
+		}
+		else {
+			AAIController* AIController = Cast<AAIController>(GetController());
+			if (AIController) AIController -> GetBrainComponent() -> StopLogic("Stunned");
+		}
+}
+
+void AProjectCharacter::Stun(float StunDuration) 
+{
+	// DisableInputControl();
+	// GetWorldTimerManager().SetTimer(TimerHandle, this, &AProjectCharacter::EnableInputControl, StunDuration, false);
+
+	// Deprecated function
+
+	BPStun(StunDuration);
+}
+
+void AProjectCharacter::AddAbilityToUI(TSubclassOf<UGameplayAbilityBase> AbilityToAdd) 
+{
+	APlayerControllerBase* Controller = Cast<APlayerControllerBase>(GetController());
+	if (Controller) {
+
+		UGameplayAbilityBase* AbilityInstance = AbilityToAdd.Get() -> GetDefaultObject<UGameplayAbilityBase>();
+		if (AbilityInstance) {
+			FGameplayAbilityInfo AbilityInfo = AbilityInstance -> GetAbilityInfo();
+			Controller -> AddAbilityToUI(AbilityInfo);
+		}
+	}
+}
+
+void AProjectCharacter::EndCombo() 
+{
+	MeleeComboCount = 1;
 }
 

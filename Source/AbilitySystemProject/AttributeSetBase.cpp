@@ -7,7 +7,7 @@
 #include "Characters/ProjectCharacter.h"
 
 
-UAttributeSetBase::UAttributeSetBase() : Health(100.f), MaxHealth(100.f), Mana(100.f), MaxMana(100.f), Stamina(100.f), MaxStamina(100.f)
+UAttributeSetBase::UAttributeSetBase() : Health(100.f), MaxHealth(100.f), Mana(200.f), MaxMana(200.f), Stamina(250.f), MaxStamina(250.f), AttackDamage(5.f), Armour(5.f)
 {
     Health = MaxHealth;
     Mana = MaxMana;
