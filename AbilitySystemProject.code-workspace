@@ -15,7 +15,10 @@
 			"${default}",
 			"/Users/javiertan/UnrealEngine/UnrealProjects/AbilitySystemProject/Intermediate/Build/Mac/x86_64/UE4Editor/Development/AbilitySystemProject/Definitions.AbilitySystemProject.h",
 			"/Users/javiertan/UnrealEngine/UnrealProjects/AbilitySystemProject/Intermediate/Build/Mac/x86_64/AbilitySystemProjectEditor/Development/Engine/SharedPCH.Engine.ShadowErrors.h"
-		]
+		],
+		"files.associations": {
+			"__functional_base": "cpp"
+		}
 	},
 	"extensions": {
 		"recommendations": [

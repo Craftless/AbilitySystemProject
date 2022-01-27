@@ -9,9 +9,14 @@
 #include "../TaggedActor.h"
 #include "GameplayEffectTypes.h"
 #include "Abilities/GameplayAbilityTargetTypes.h"
+#include "GameplayEffect.h"
 #include "ProjectCharacter.generated.h"
 
 
+UENUM() 
+enum class TeamID : uint8 {
+
+};
 
 UCLASS()
 class ABILITYSYSTEMPROJECT_API AProjectCharacter : public ACharacter, public IAbilitySystemInterface, public ITaggedActor
@@ -37,6 +42,17 @@ public:
 	bool IsOtherActorHostile(AActor* ActorToCheck);
 	UFUNCTION(BlueprintCallable)
 	void ApplyGameplayEffectToTargetByTargetData(const FGameplayEffectSpecHandle& GESpecHandle, const FGameplayAbilityTargetDataHandle& TargetDataHandle);
+	UFUNCTION(BlueprintCallable)
+	bool GetCooldownRemainingForTag(FGameplayTagContainer CooldownTags, float & TimeRemaining, float & CooldownDuration);
+	UPROPERTY(BlueprintReadWrite)
+	int32 AttributePointsAvailable;
+	UFUNCTION(BlueprintCallable)
+	float GetCurrentAttackDamage();
+	UFUNCTION(BlueprintCallable)
+	float GetCurrentAttackDamageAccordingToASC1();
+	float GetCurrentAttackDamageAccordingToASC2();
+	float GetCurrentAttackDamageAccordingToASC3();
+	float GetCurrentAttackDamageAccordingToAttribute();
 
 protected:
 	// Called when the game starts or when spawned
@@ -47,11 +63,15 @@ protected:
 	class UAttributeSetBase* AttributeSetBase;
 
 	UFUNCTION(BlueprintImplementableEvent, meta = (DisplayName = "OnHealthChanged"))
-	void BP_OnHealthChanged(float Health, float MaxHealth, bool FullHealth);
+	void BP_OnHealthChanged(float Health, float MaxHealth, bool FullHealth, float PreviousHealth, AActor* EffectInstigator);
 	UFUNCTION(BlueprintImplementableEvent, meta = (DisplayName = "OnManaChanged"))
 	void BP_OnManaChanged(float Mana, float MaxMana);
 	UFUNCTION(BlueprintImplementableEvent, meta = (DisplayName = "OnStaminaChanged"))
 	void BP_OnStaminaChanged(float Stamina, float MaxStamina);
+	UFUNCTION(BlueprintImplementableEvent, meta = (DisplayName = "OnExperienceChanged"))
+	void BP_OnExperienceChanged(float Experience, float MaxExperience);
+	UFUNCTION(BlueprintImplementableEvent, meta = (DisplayName = "OnMainAttributeChanged"))
+	void BP_OnMainAttributeChanged(EAttributeType Type, float CurrentAttributeValue);
 
 	UFUNCTION(BlueprintImplementableEvent, meta = (DisplayName = "OnDeath"))
 	void BP_OnDeath();
@@ -75,18 +95,29 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	int32 MeleeComboCount = 1;
 	UFUNCTION(BlueprintCallable)
-	void EndCombo();
+	void EndCombo(); 
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnActiveGameplayEffectAddedCallback(UAbilitySystemComponent* Target, const FGameplayEffectSpec& SpecApplied, FActiveGameplayEffectHandle ActiveHandle);
+	UFUNCTION(BlueprintCallable)
+	bool GameplayEffectSpecContainsTag(const FGameplayEffectSpec& SpecToCheck, FGameplayTag TagToCheck);
+	UFUNCTION(BlueprintCallable)
+	UAbilitySystemComponent* GetInstigatorASC(const FGameplayEffectSpec& InSpec);
 
 private:
 	void MoveForward(float Value);
 	void MoveRight(float Value);
 
 	UFUNCTION()
-	void OnHealthChanged(float Health, float MaxHealth, bool FullHealth);
+	void OnHealthChanged(float Health, float MaxHealth, bool FullHealth, float PreviousHealth, AActor* EffectInstigator);
 	UFUNCTION()
 	void OnManaChanged(float Mana, float MaxMana);
 	UFUNCTION()
 	void OnStaminaChanged(float Stamina, float MaxStamina);
+	UFUNCTION()
+	void OnExperienceChanged(float Experience, float MaxExperience);
+	UFUNCTION()
+	void OnMainAttributeChanged(EAttributeType Type, float CurrentAttributeValue);
 
 
 	FTimerHandle TimerHandle;

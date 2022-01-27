@@ -10,7 +10,7 @@ FGameplayAbilityInfo UGameplayAbilityBase::GetAbilityInfo()
     UGameplayEffect* CostEffect = GetCostGameplayEffect();
     if (CDEffect && CostEffect) {
         float CD;
-        CDEffect -> DurationMagnitude.GetStaticMagnitudeIfPossible(1, CD);
+        bool bSuccess = CDEffect -> DurationMagnitude.GetStaticMagnitudeIfPossible(1, CD);
         float Cost;
         EAbilityCostType CostType = EAbilityCostType::Mana;
         if (CostEffect -> Modifiers.Num() > 0) {
@@ -31,4 +31,11 @@ FGameplayAbilityInfo UGameplayAbilityBase::GetAbilityInfo()
         }
     }
     return FGameplayAbilityInfo();
+}
+
+bool UGameplayAbilityBase::IsCooldownDurationStatic() 
+{
+    UGameplayEffect* CDEffect = GetCooldownGameplayEffect();
+    float CD;
+    return CDEffect -> DurationMagnitude.GetStaticMagnitudeIfPossible(1, CD);
 }

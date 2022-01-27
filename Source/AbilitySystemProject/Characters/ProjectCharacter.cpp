@@ -30,10 +30,14 @@ void AProjectCharacter::BeginPlay()
 		AttributeSetBase -> OnHealthChanged.AddDynamic(this, &AProjectCharacter::OnHealthChanged);
 		AttributeSetBase -> OnManaChanged.AddDynamic(this, &AProjectCharacter::OnManaChanged);
 		AttributeSetBase -> OnStaminaChanged.AddDynamic(this, &AProjectCharacter::OnStaminaChanged);
+		AttributeSetBase -> OnExperienceChanged.AddDynamic(this, &AProjectCharacter::OnExperienceChanged);
+		AttributeSetBase -> OnMainAttributeChanged.AddDynamic(this, &AProjectCharacter::OnMainAttributeChanged);
 	}
 	bIsDead = false;
 	MeleeComboCount = 1;
+	GetAbilitySystemComponent() -> OnActiveGameplayEffectAddedDelegateToSelf.AddUObject(this, &AProjectCharacter::OnActiveGameplayEffectAddedCallback);
 }
+
 
 
 // Called every frame
@@ -121,20 +125,22 @@ void AProjectCharacter::MoveRight(float Value)
 	AddMovementInput(RightVector, Value);
 }
 
-void AProjectCharacter::OnHealthChanged(float Health, float MaxHealth, bool FullHealth) 
+void AProjectCharacter::OnHealthChanged(float Health, float MaxHealth, bool FullHealth, float PreviousHealth, AActor* EffectInstigator) 
 {
 	if (bIsDead) return;
-	if (Health <= 0.f) {
-		BP_OnDeath();
-		bIsDead = true;
-	}
 	if (FullHealth) {
 		AddGameplayTag(FullHealthTag);
 	}
 	else {
 		RemoveGameplayTag(FullHealthTag);
 	}
-	BP_OnHealthChanged(Health, MaxHealth, FullHealth);
+	BP_OnHealthChanged(Health, MaxHealth, FullHealth, PreviousHealth, EffectInstigator);
+
+
+	if (Health <= 0.f) {
+		BP_OnDeath();
+		bIsDead = true;
+	}
 }
 
 void AProjectCharacter::OnManaChanged(float Mana, float MaxMana) 
@@ -146,6 +152,18 @@ void AProjectCharacter::OnStaminaChanged(float Stamina, float MaxStamina)
 {
 	BP_OnStaminaChanged(Stamina, MaxStamina);
 }
+
+void AProjectCharacter::OnExperienceChanged(float Experience, float MaxExperience) 
+{
+	BP_OnExperienceChanged(Experience, MaxExperience);
+}
+
+void AProjectCharacter::OnMainAttributeChanged(EAttributeType Type, float CurrentAttributeValue) 
+{
+
+	BP_OnMainAttributeChanged(Type, CurrentAttributeValue);
+}
+
 
 
 void AProjectCharacter::SetTeamIDByControllerType() 
@@ -212,7 +230,7 @@ void AProjectCharacter::AddAbilityToUI(TSubclassOf<UGameplayAbilityBase> Ability
 		UGameplayAbilityBase* AbilityInstance = AbilityToAdd.Get() -> GetDefaultObject<UGameplayAbilityBase>();
 		if (AbilityInstance) {
 			FGameplayAbilityInfo AbilityInfo = AbilityInstance -> GetAbilityInfo();
-			Controller -> AddAbilityToUI(AbilityInfo);
+			Controller -> AddAbilityToUI(AbilityInfo, AbilityInstance);
 		}
 	}
 }
@@ -222,3 +240,73 @@ void AProjectCharacter::EndCombo()
 	MeleeComboCount = 1;
 }
 
+bool AProjectCharacter::GameplayEffectSpecContainsTag(const FGameplayEffectSpec& SpecToCheck, FGameplayTag TagToCheck) 
+{
+	FGameplayTagContainer TagContainer;
+	SpecToCheck.GetAllAssetTags(TagContainer);
+	return TagContainer.HasTag(TagToCheck);
+}
+
+UAbilitySystemComponent* AProjectCharacter::GetInstigatorASC(const FGameplayEffectSpec& InSpec) 
+{
+	return InSpec.GetContext().GetInstigatorAbilitySystemComponent();
+}
+
+
+bool AProjectCharacter::GetCooldownRemainingForTag(FGameplayTagContainer CooldownTags, float & TimeRemaining, float & CooldownDuration)
+{
+	if (GetAbilitySystemComponent() && CooldownTags.Num() > 0)
+	{
+		TimeRemaining = 0.f;
+		CooldownDuration = 0.f;
+
+		FGameplayEffectQuery const Query = FGameplayEffectQuery::MakeQuery_MatchAnyOwningTags(CooldownTags);
+		TArray< TPair<float, float> > DurationAndTimeRemaining = GetAbilitySystemComponent()->GetActiveEffectsTimeRemainingAndDuration(Query);
+		if (DurationAndTimeRemaining.Num() > 0)
+		{
+			int32 BestIdx = 0;
+			float LongestTime = DurationAndTimeRemaining[0].Key;
+			for (int32 Idx = 1; Idx < DurationAndTimeRemaining.Num(); ++Idx)
+			{
+				if (DurationAndTimeRemaining[Idx].Key > LongestTime)
+				{
+					LongestTime = DurationAndTimeRemaining[Idx].Key;
+					BestIdx = Idx;
+				}
+			}
+
+			TimeRemaining = DurationAndTimeRemaining[BestIdx].Key;
+			CooldownDuration = DurationAndTimeRemaining[BestIdx].Value;
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
+float AProjectCharacter::GetCurrentAttackDamage() 
+{
+	return AttributeSetBase -> AttackDamage.GetCurrentValue();
+}
+
+
+float AProjectCharacter::GetCurrentAttackDamageAccordingToASC1() 
+{
+	return GetAbilitySystemComponent() -> GetNumericAttribute(UAttributeSetBase::GetAttackDamageAttribute());
+}
+
+float AProjectCharacter::GetCurrentAttackDamageAccordingToASC2() 
+{
+	return GetAbilitySystemComponent() -> GetNumericAttributeBase(UAttributeSetBase::GetAttackDamageAttribute());
+}
+
+float AProjectCharacter::GetCurrentAttackDamageAccordingToASC3() 
+{
+	return GetAbilitySystemComponent() -> GetNumericAttributeChecked(UAttributeSetBase::GetAttackDamageAttribute());
+}
+
+float AProjectCharacter::GetCurrentAttackDamageAccordingToAttribute() 
+{
+	return UAttributeSetBase::GetAttackDamageAttribute().GetNumericValue(AttributeSetBase);
+}

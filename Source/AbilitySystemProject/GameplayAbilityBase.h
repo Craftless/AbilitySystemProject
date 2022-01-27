@@ -21,5 +21,8 @@ public:
 	UMaterialInstance* UIMaterial;
 	UFUNCTION(BlueprintCallable)
 	FGameplayAbilityInfo GetAbilityInfo();
+
+	UFUNCTION(BlueprintPure)
+	bool IsCooldownDurationStatic();
 	
 };

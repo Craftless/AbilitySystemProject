@@ -3,15 +3,16 @@
 
 #include "DamageGEExecutionCalculation.h"
 #include "AttributeSetBase.h"
-
+#include "AbilitySystemComponent.h"
+#include "Characters/ProjectCharacter.h"
 
 struct DamageStatics {
     DECLARE_ATTRIBUTE_CAPTUREDEF(AttackDamage)
     DECLARE_ATTRIBUTE_CAPTUREDEF(Armour)
 
     DamageStatics() {
-        DEFINE_ATTRIBUTE_CAPTUREDEF(UAttributeSetBase, AttackDamage, Source, true);
-        DEFINE_ATTRIBUTE_CAPTUREDEF(UAttributeSetBase, Armour, Target, true);
+        DEFINE_ATTRIBUTE_CAPTUREDEF(UAttributeSetBase, AttackDamage, Source, false);
+        DEFINE_ATTRIBUTE_CAPTUREDEF(UAttributeSetBase, Armour, Target, false);
     }
 };
 
@@ -41,7 +42,12 @@ void UDamageGEExecutionCalculation::Execute_Implementation(const FGameplayEffect
 
 
     float FinalDamage = SourceAttackDamage * (1 - ((0.02f * TargetArmour) / (0.9f + 0.048f * TargetArmour)));
-
+    ExecutionParams.GetSourceAbilitySystemComponent() -> RemoveActiveEffectsWithSourceTags(FGameplayTagContainer(FGameplayTag::RequestGameplayTag(FName("ability.kallari.invisibility.damagebuff"))));
+    AProjectCharacter* ProjectCharacter = Cast<AProjectCharacter>(ExecutionParams.GetSourceAbilitySystemComponent() -> GetOwnerActor());
+    if (!ProjectCharacter) return;
+    float BonusDamage;
+    ExecutionParams.AttemptCalculateCapturedAttributeBonusMagnitude(GetDamageStatics().AttackDamageDef, FAggregatorEvaluateParameters(), BonusDamage);
+    FinalDamage = (ProjectCharacter -> GetCurrentAttackDamageAccordingToASC1() + BonusDamage) * (1 - ((0.02f * TargetArmour) / (0.9f + 0.048f * TargetArmour)));
     OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(HealthProperty, EGameplayModOp::Additive, -FinalDamage));
 }
 

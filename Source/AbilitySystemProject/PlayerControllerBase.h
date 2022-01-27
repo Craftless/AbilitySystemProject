@@ -17,6 +17,6 @@ class ABILITYSYSTEMPROJECT_API APlayerControllerBase : public APlayerController
 
 public:
 	UFUNCTION(BlueprintImplementableEvent)
-	void AddAbilityToUI(FGameplayAbilityInfo AbilityInfo);
+	void AddAbilityToUI(FGameplayAbilityInfo AbilityInfo, UGameplayAbilityBase* AbilityInstance);
 	
 };
