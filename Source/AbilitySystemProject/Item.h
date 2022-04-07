@@ -26,6 +26,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	FItemInfo ItemInfo;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UStaticMesh* MeshToDisplay = nullptr;
+
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void GetEffectSpecToApply(class UAbilitySystemComponent* ASC, bool& HasSpec, FGameplayEffectSpecHandle& OutSpec);
 

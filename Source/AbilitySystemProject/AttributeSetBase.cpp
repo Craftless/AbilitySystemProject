@@ -29,6 +29,10 @@ void UAttributeSetBase::PostGameplayEffectExecute(const struct FGameplayEffectMo
         OnHealthChanged.Broadcast(Health.GetCurrentValue(), MaxHealth.GetCurrentValue(), Health.GetCurrentValue() == MaxHealth.GetCurrentValue(), PreviousHealth, Data.EffectSpec.GetContext().GetInstigator());
         PreviousHealth = Health.GetCurrentValue();
     }
+    if (Data.EvaluatedData.Attribute.GetUProperty() == FindFieldChecked<FProperty>(UAttributeSetBase::StaticClass(), GET_MEMBER_NAME_CHECKED(UAttributeSetBase, MaxHealth))) {
+        OnHealthChanged.Broadcast(Health.GetCurrentValue(), MaxHealth.GetCurrentValue(), Health.GetCurrentValue() == MaxHealth.GetCurrentValue(), PreviousHealth, Data.EffectSpec.GetContext().GetInstigator());
+        PreviousHealth = Health.GetCurrentValue();
+    }
 
     Mana.SetCurrentValue(FMath::Clamp(Mana.GetCurrentValue(), 0.f, MaxMana.GetCurrentValue()));
     Mana.SetBaseValue(FMath::Clamp(Mana.GetBaseValue(), 0.f, MaxMana.GetCurrentValue()));
@@ -122,7 +126,7 @@ void UAttributeSetBase::OnMainAttributeChangedFunction(EAttributeType Type, floa
     switch(Type) {
 		case EAttributeType::Strength:
 			SetBaseAndCurrentValueOfAttribute(AttackDamage, CalculateBaseAttackDamage());
-            break;
+            break;  
         case EAttributeType::Intelligence:
 			SetBaseAndCurrentValueOfAttribute(Armour, CalculateArmour());
             break;
